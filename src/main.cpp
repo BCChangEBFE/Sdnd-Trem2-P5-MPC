@@ -93,7 +93,7 @@ int main() {
           double v = j[1]["speed"];
 
           /*
-          * TODO: Calculate steering angle and throttle using MPC.
+          * TODO: Calculate steeering angle and throttle using MPC.
           *
           * Both are in between [-1, 1].
           *
@@ -101,16 +101,56 @@ int main() {
           double steer_value;
           double throttle_value;
 
+          /////////////////////////////////////////////
+          //convert to car coordinate
+          //https://discussions.udacity.com/t/mpc-car-space-conversion-and-output-of-solve-intuition/249469
+          //https://discussions.udacity.com/t/not-able-to-display-trajectory-and-reference-paths-in-the-simulator/248545/9
+          vector<double> x_car_space(ptsx.size());
+          vector<double> y_car_space(ptsy.size());
+          for (auto i = 0; i < ptsx.size(); ++i) {
+            // rotated
+            x_car_space[i] = ((ptsx[i] - px) * cos(psi)) + ((ptsy[i] - py) * sin(psi));
+            y_car_space[i] = ((ptsy[i] - py) * cos(psi)) - ((ptsx[i] - px) * sin(psi));
+          } 
+
+          // estimate the track as a 3rd polynomial
+          Eigen::Map<Eigen::VectorXd> xs(&x_car_space[0], x_car_space.size());
+          Eigen::Map<Eigen::VectorXd> ys(&y_car_space[0], y_car_space.size());
+          // TODO: fit a polynomial to the above x and y coordinates
+          auto coeffs = polyfit(xs, ys, 3);
+          // TODO: calculate the cross track error
+          double cte = polyeval(coeffs, 0); //double cte = polyeval(coeffs, x) - y;
+          // TODO: calculate the orientation error
+          double epsi = epsi = psi - atan(coeffs[1]);
+
+          Eigen::VectorXd state(6);
+          //px, py, psi, v, cte, epsi;
+          state << px,0,psi, v, cte, epsi;
+          std::cout << "====solve" << std::endl;
+          std::cout  << "px: " << px << " py: " << py << " psi: " << psi << " v: " << v << " cte: " << cte << " epsi: " << epsi << std::endl;
+          std::cout << "coeffs:" << coeffs << std::endl;
+          auto actuator = mpc.Solve(state, coeffs);
+          
+
+          steer_value = -actuator[0];
+          throttle_value = actuator[1];
+
+          std::cout  << "steer_value: " << steer_value << std::endl;
+          std::cout << "solved====" << std::endl;
+          
+          /////////////////////////////////////////////
+
           json msgJson;
-          // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
-          // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
-
+          for (int i = 0; i < 30; i++) {
+            mpc_x_vals.push_back(i);
+            mpc_y_vals.push_back(polyeval(coeffs, i));
+          }
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 
@@ -124,8 +164,8 @@ int main() {
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
 
-          msgJson["next_x"] = next_x_vals;
-          msgJson["next_y"] = next_y_vals;
+          msgJson["next_x"] = x_car_space;
+          msgJson["next_y"] = y_car_space;
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
