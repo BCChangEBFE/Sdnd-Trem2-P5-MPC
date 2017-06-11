@@ -5,6 +5,9 @@ This is my solution for udacity project hosted at https://github.com/udacity/Car
 
 ##### The Model
 
+The variables used to describe the vehicle here includes x,y,psi,v,steer_angle and throttle.
+
+
 Student describes their model in detail. This includes the state, actuators and update equations.
 
 ##### Timestep Length and Elapsed Duration (N & dt)
