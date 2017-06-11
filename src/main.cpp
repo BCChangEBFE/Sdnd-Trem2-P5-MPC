@@ -91,7 +91,8 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-
+          double steer_angle = j[1]["steering_angle"];
+          double throttle = j[1]["throttle"];
           /*
           * TODO: Calculate steeering angle and throttle using MPC.
           *
@@ -118,25 +119,31 @@ int main() {
           Eigen::Map<Eigen::VectorXd> ys(&y_car_space[0], y_car_space.size());
           // TODO: fit a polynomial to the above x and y coordinates
           auto coeffs = polyfit(xs, ys, 3);
-          // TODO: calculate the cross track error
-          double cte = polyeval(coeffs, 0); //double cte = polyeval(coeffs, x) - y;
-          // TODO: calculate the orientation error
-          double epsi = epsi = psi - atan(coeffs[1]);
+          
+          //// TODO: calculate the cross track error
+          ////double cte = polyeval(coeffs, 0) - 0; //double cte = polyeval(coeffs, x) - y;
+          //// TODO: calculate the orientation error
+          ////double epsi = - atan(coeffs[1]);
+          
+          // predict state in 100ms, 
+          //referenced from https://github.com/piyush-karande, 
+          //https://discussions.udacity.com/t/cars-keeps-braking-and-moving-back-and-foth/263282
+          double dt = 0.1;
+          px = v * dt;
+          py = 0;
+          psi = -v * steer_angle * dt / 2.67;
+          double cte = py - polyeval(coeffs, px);
+          double epsi = psi - atan(coeffs[1] + 2 * px * coeffs[2] + 3 * px * px * coeffs[2]);
 
           Eigen::VectorXd state(6);
           //px, py, psi, v, cte, epsi;
-          state << px,0,psi, v, cte, epsi;
-          std::cout << "====solve" << std::endl;
-          std::cout  << "px: " << px << " py: " << py << " psi: " << psi << " v: " << v << " cte: " << cte << " epsi: " << epsi << std::endl;
-          std::cout << "coeffs:" << coeffs << std::endl;
+          state << px,py,psi, v, cte, epsi;
           auto actuator = mpc.Solve(state, coeffs);
           
 
           steer_value = -actuator[0];
           throttle_value = actuator[1];
 
-          std::cout  << "steer_value: " << steer_value << std::endl;
-          std::cout << "solved====" << std::endl;
           
           /////////////////////////////////////////////
 

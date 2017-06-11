@@ -8,7 +8,7 @@ using CppAD::AD;
 // TODO: Set the timestep length and duration
 //size_t N = 25;
 //double dt = 0.05;
-const size_t N = 5;
+const size_t N = 25;
 const double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
@@ -26,15 +26,15 @@ const double ref_cte = 0;
 const double ref_epsi = 0;
 // NOTE: feel free to play around with this
 // or do something completely different
-const double ref_v = 30;
+const double ref_v = 65;
 
-const double k_cte = 1;
-const double k_epsi = 1;
+const double k_cte = 300;
+const double k_epsi = 200;
 const double k_v = 1;
-const double k_deltaStart = 10;
+const double k_deltaStart = 100;
 const double k_aStart = 1;
-const double k_d_deltaStart = 1;
-const double k_d_aStart = 1;
+const double k_d_deltaStart = 2000;
+const double k_d_aStart = 0.1;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -124,9 +124,11 @@ class FG_eval {
       AD<double> delta0 = vars[delta_start + i];
       AD<double> a0 = vars[a_start + i];
 
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0;
-      AD<double> psides0 = CppAD::atan(coeffs[1]);
-
+      //AD<double> f0 = coeffs[0] + coeffs[1] * x0;
+      //AD<double> psides0 = CppAD::atan(coeffs[1]);
+      AD<double> f0 = coeffs[0] + coeffs[1]*x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0;
+      // atan(f'(x)) is the desired angle
+      AD<double> psides0 = CppAD::atan(coeffs[1] + 2*coeffs[2]*x0 + 3*coeffs[3]*x0*x0);
       // Here's `x` to get you started.
       // The idea here is to constraint this value to be 0.
       //
@@ -136,7 +138,7 @@ class FG_eval {
 
       // TODO: Setup the rest of the model constraints
       fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
-      fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
+      fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
       fg[2 + psi_start + i] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
       fg[2 + v_start + i] = v1 - (v0 + a0 * dt);
       fg[2 + cte_start + i] =
@@ -279,5 +281,5 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
-  return {solution.x[delta_start + 1],   solution.x[a_start + 1]};
+  return {solution.x[delta_start ],   solution.x[a_start ]};
 }
