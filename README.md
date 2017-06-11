@@ -7,6 +7,8 @@ This is my solution for udacity project hosted at https://github.com/udacity/Car
 
 The variables used to describe the vehicle here includes x,y,psi,v,steer_angle and throttle.
 
+The actuators used to control the vehicle are steering_angle (delta) and throttle (a). steering_angle is being constrained within -25 and 25 degrees while throttle is constrained within -1 and 1.
+
 
 Student describes their model in detail. This includes the state, actuators and update equations.
 
