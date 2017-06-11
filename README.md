@@ -9,8 +9,13 @@ The variables used to describe the vehicle here includes x,y,psi,v,steer_angle a
 
 The actuators used to control the vehicle are steering_angle (delta) and throttle (a). steering_angle is being constrained within -25 and 25 degrees while throttle is constrained within -1 and 1.
 
-
-Student describes their model in detail. This includes the state, actuators and update equations.
+After getting the updated vehicle states and the waypoints and transforming them into vehicle space and fitting the 3rd polynomial for the intended MPC_points to be followed. 
+ - px (vehicle x coordinate) = v * dt
+ -- where dt = 0.1 for predicting 100 millisecond into the future
+ - psi = -v * steer_angle * dt / Lf
+ - CTE is updated with the polynomial fit with future px (vehicle x coordinate) as input. 
+ - EPSI is the derivative of the reference trajectory
+ -- psi - atan(coeffs[1] + 2 * px * coeffs[2] + 3 * px * px * coeffs[2]);
 
 ##### Timestep Length and Elapsed Duration (N & dt)
 
@@ -26,7 +31,5 @@ A 3rd degree Polynomial is fitted to waypoints. The waypoints here are preproces
 
 ##### Model Predictive Control with Latency
 
-Latency is dealt with by feeding a state that is 100 millisecond into the future. The future state here is estimated by 
- - px = v * dt
- - psi = -v * steer_angle * dt / Lf;
+Latency is dealt with by feeding a state that is 100 millisecond into the future. The future state here is estimated by setting dt = 0.1 in the update equations
 
